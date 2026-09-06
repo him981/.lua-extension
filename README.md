@@ -13,6 +13,12 @@ local Settings = {
     Smoothness = 0.2,
     TargetPart = "Head",
     
+    -- Triggerbot Settings
+    Triggerbot = false,
+    TriggerbotTeamCheck = true,
+    TriggerbotPart = "Head",
+    TriggerbotDelay = 0.05,
+
     -- FOV Settings
     FOVRadius = 250,
     ShowFOVCircle = false,
@@ -29,6 +35,14 @@ local Settings = {
     HeadExpand = false,
     HeadSize = 2,
 
+    -- NEW FEATURES TAB SETTINGS
+    SilentAim = false,
+    Spinbot = false,
+    SpinSpeed = 20,
+    SpeedHack = false,
+    WalkSpeedValue = 32,
+    InfJump = false,
+
     -- UI Colors
     AccentColor = Color3.fromRGB(0, 229, 255),
     ButtonActiveColor = Color3.fromRGB(0, 140, 200),
@@ -37,6 +51,7 @@ local Settings = {
 }
 
 local Aiming = false
+local Shooting = false
 local OriginalSizes = {}
 local OriginalMeshScales = {}
 local Connections = {}
@@ -127,7 +142,6 @@ local HeaderCorner = Instance.new("UICorner")
 HeaderCorner.CornerRadius = UDim.new(0, 8)
 HeaderCorner.Parent = Header
 
--- Fix bottom corners of header frame to be square
 local HeaderSquareFix = Instance.new("Frame")
 HeaderSquareFix.Size = UDim2.new(1, 0, 0, 8)
 HeaderSquareFix.Position = UDim2.new(0, 0, 1, -8)
@@ -135,7 +149,6 @@ HeaderSquareFix.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
 HeaderSquareFix.BorderSizePixel = 0
 HeaderSquareFix.Parent = Header
 
--- Glowing Accent Line under Header
 local HeaderBar = Instance.new("Frame")
 HeaderBar.Name = "HeaderBar"
 HeaderBar.Size = UDim2.new(1, 0, 0, 2)
@@ -149,7 +162,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -16, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "⚡ PHANTOM // NEXUS v2.4 [SECURE]"
+Title.Text = "⚡ PHANTOM // NEXUS v2.8 [SECURE]"
 Title.TextColor3 = Settings.AccentColor
 Title.TextSize = 12
 Title.Font = Enum.Font.Code
@@ -216,7 +229,7 @@ TabBar.Parent = MainFrame
 local TabListLayout = Instance.new("UIListLayout")
 TabListLayout.FillDirection = Enum.FillDirection.Horizontal
 TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-TabListLayout.Padding = UDim.new(0, 6)
+TabListLayout.Padding = UDim.new(0, 4)
 TabListLayout.Parent = TabBar
 
 -- Content Container
@@ -232,12 +245,12 @@ local TabButtons = {}
 
 local function CreateTab(tabName)
     local tabBtn = Instance.new("TextButton")
-    tabBtn.Size = UDim2.new(0.24, 0, 1, 0)
+    tabBtn.Size = UDim2.new(0.155, 0, 1, 0)
     tabBtn.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
     tabBtn.Text = tabName
     tabBtn.TextColor3 = Color3.fromRGB(140, 140, 150)
     tabBtn.Font = Enum.Font.Code
-    tabBtn.TextSize = 11
+    tabBtn.TextSize = 10
     tabBtn.Parent = TabBar
 
     local tabBtnCorner = Instance.new("UICorner")
@@ -278,7 +291,7 @@ local function CreateToggleButton(parentPage, text, defaultState, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -6, 0, 30)
     btn.BackgroundColor3 = defaultState and Settings.ButtonActiveColor or Color3.fromRGB(20, 20, 28)
-    btn.Text = "  [ " .. (defaultState and "ENABLED" or "DISABLED") .. " ]  " .. text
+    btn.Text = "   [ " .. (defaultState and "ENABLED" or "DISABLED") .. " ]  " .. text
     btn.TextColor3 = defaultState and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(170, 170, 180)
     btn.Font = Enum.Font.Code
     btn.TextSize = 11
@@ -296,7 +309,7 @@ local function CreateToggleButton(parentPage, text, defaultState, callback)
     TrackConnection(btn.MouseButton1Click:Connect(function()
         state = not state
         btn.BackgroundColor3 = state and Settings.ButtonActiveColor or Color3.fromRGB(20, 20, 28)
-        btn.Text = "  [ " .. (state and "ENABLED" or "DISABLED") .. " ]  " .. text
+        btn.Text = "   [ " .. (state and "ENABLED" or "DISABLED") .. " ]  " .. text
         btn.TextColor3 = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(170, 170, 180)
         callback(state)
     end))
@@ -377,7 +390,7 @@ local function CreateActionBtn(parentPage, text, bgColor, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -6, 0, 30)
     btn.BackgroundColor3 = bgColor
-    btn.Text = "  " .. text
+    btn.Text = "   " .. text
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.Code
     btn.TextSize = 11
@@ -396,8 +409,10 @@ end
 
 -- Pages Initialization
 local AimbotPage = CreateTab("Aimbot")
+local TriggerbotPage = CreateTab("Triggerbot")
 local VisualsPage = CreateTab("Visuals")
 local HitboxPage = CreateTab("Hitbox")
+local NewFeaturesPage = CreateTab("New Features")
 local UISettingsPage = CreateTab("UI Settings")
 
 Tabs["Aimbot"].Visible = true
@@ -453,10 +468,10 @@ CreateToggleButton(AimbotPage, "Lock on RMB", Settings.LockOnHold, function(v) S
 CreateActionBtn(AimbotPage, "[ TARGET PART ] Currently: HEAD", Color3.fromRGB(22, 22, 32), function(btn)
     if Settings.TargetPart == "Head" then
         Settings.TargetPart = "Torso"
-        btn.Text = "  [ TARGET PART ] Currently: TORSO"
+        btn.Text = "   [ TARGET PART ] Currently: TORSO"
     else
         Settings.TargetPart = "Head"
-        btn.Text = "  [ TARGET PART ] Currently: HEAD"
+        btn.Text = "   [ TARGET PART ] Currently: HEAD"
     end
 end)
 
@@ -470,6 +485,27 @@ end)
 
 CreateSlider(AimbotPage, "FOV Radius Size", 50, 500, Settings.FOVRadius, function(v)
     Settings.FOVRadius = v
+end)
+
+-- Triggerbot Tab Controls
+CreateToggleButton(TriggerbotPage, "Triggerbot Engine", Settings.Triggerbot, function(v) Settings.Triggerbot = v end)
+CreateToggleButton(TriggerbotPage, "Team Check", Settings.TriggerbotTeamCheck, function(v) Settings.TriggerbotTeamCheck = v end)
+
+CreateActionBtn(TriggerbotPage, "[ TARGET PART ] Currently: HEAD", Color3.fromRGB(22, 22, 32), function(btn)
+    if Settings.TriggerbotPart == "Head" then
+        Settings.TriggerbotPart = "Torso"
+        btn.Text = "   [ TARGET PART ] Currently: TORSO"
+    elseif Settings.TriggerbotPart == "Torso" then
+        Settings.TriggerbotPart = "Any"
+        btn.Text = "   [ TARGET PART ] Currently: ANY"
+    else
+        Settings.TriggerbotPart = "Head"
+        btn.Text = "   [ TARGET PART ] Currently: HEAD"
+    end
+end)
+
+CreateSlider(TriggerbotPage, "Shot Delay (Seconds)", 0.0, 0.5, Settings.TriggerbotDelay, function(v)
+    Settings.TriggerbotDelay = v
 end)
 
 -- Visuals Tab Controls
@@ -505,6 +541,34 @@ end)
 CreateToggleButton(HitboxPage, "Expand Head Hitbox", Settings.HeadExpand, function(v) Settings.HeadExpand = v end)
 CreateSlider(HitboxPage, "Head Hitbox Scale", 1, 10, Settings.HeadSize, function(v)
     Settings.HeadSize = v
+end)
+
+-- NEW FEATURES TAB CONTROLS
+CreateToggleButton(NewFeaturesPage, "Silent Aim (Camera Snap On Shot)", Settings.SilentAim, function(v)
+    Settings.SilentAim = v
+end)
+
+CreateToggleButton(NewFeaturesPage, "Spinbot Anti-Aim", Settings.Spinbot, function(v)
+    Settings.Spinbot = v
+end)
+
+CreateSlider(NewFeaturesPage, "Spin Speed", 5, 100, Settings.SpinSpeed, function(v)
+    Settings.SpinSpeed = v
+end)
+
+CreateToggleButton(NewFeaturesPage, "Speed Hack", Settings.SpeedHack, function(v)
+    Settings.SpeedHack = v
+    if not v and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+    end
+end)
+
+CreateSlider(NewFeaturesPage, "WalkSpeed Value", 16, 120, Settings.WalkSpeedValue, function(v)
+    Settings.WalkSpeedValue = v
+end)
+
+CreateToggleButton(NewFeaturesPage, "Infinite Jump", Settings.InfJump, function(v)
+    Settings.InfJump = v
 end)
 
 -- UI Settings Tab Controls
@@ -575,6 +639,10 @@ local function UnloadScript()
         if mesh and mesh.Parent then mesh.Scale = originalScale end
     end
 
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+    end
+
     ScreenGui:Destroy()
 end
 
@@ -583,6 +651,11 @@ CreateActionBtn(UISettingsPage, "[ UNLOAD ] Terminate Script", Color3.fromRGB(16
 -- Core Gameplay & Targeting Loops
 TrackConnection(UserInputService.InputBegan:Connect(function(input, gpe)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then Aiming = true end
+    if Settings.InfJump and input.KeyCode == Enum.KeyCode.Space and not gpe then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
 end))
 
 TrackConnection(UserInputService.InputEnded:Connect(function(input)
@@ -646,6 +719,47 @@ local function GetClosestTarget()
     return ClosestPart
 end
 
+-- Triggerbot Raycast Function
+local function GetTargetUnderCrosshair()
+    local MouseLocation = UserInputService:GetMouseLocation()
+    local UnitRay = Camera:ViewportPointToRay(MouseLocation.X, MouseLocation.Y)
+    
+    local RaycastParams = RaycastParams.new()
+    RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    
+    if LocalPlayer.Character then
+        RaycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+    end
+
+    local Result = workspace:Raycast(UnitRay.Origin, UnitRay.Direction * 1000, RaycastParams)
+
+    if Result and Result.Instance then
+        local HitPart = Result.Instance
+        local Model = HitPart:FindFirstAncestorOfClass("Model")
+        
+        if Model then
+            local TargetPlayer = Players:GetPlayerFromCharacter(Model)
+            if TargetPlayer and TargetPlayer ~= LocalPlayer then
+                if Settings.TriggerbotTeamCheck and TargetPlayer.Team and LocalPlayer.Team and TargetPlayer.Team == LocalPlayer.Team then
+                    return nil
+                end
+                
+                local Humanoid = Model:FindFirstChildOfClass("Humanoid")
+                if Humanoid and Humanoid.Health > 0 then
+                    if Settings.TriggerbotPart == "Head" then
+                        if HitPart.Name == "Head" then return TargetPlayer end
+                    elseif Settings.TriggerbotPart == "Torso" then
+                        if HitPart.Name == "UpperTorso" or HitPart.Name == "Torso" or HitPart.Name == "HumanoidRootPart" then return TargetPlayer end
+                    elseif Settings.TriggerbotPart == "Any" then
+                        return TargetPlayer
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
 -- Mouse Cursor Tracking Lock (using mousemoverel)
 RunService:BindToRenderStep("HypershotMouseMoverelLock", Enum.RenderPriority.Camera.Value + 1, function()
     if Settings.Aimbot and (not Settings.LockOnHold or Aiming) then
@@ -665,6 +779,60 @@ RunService:BindToRenderStep("HypershotMouseMoverelLock", Enum.RenderPriority.Cam
         end
     end
 end)
+
+-- Triggerbot Execution Loop
+TrackConnection(RunService.RenderStepped:Connect(function()
+    if not Settings.Triggerbot then return end
+
+    local Target = GetTargetUnderCrosshair()
+    
+    if Target and not Shooting then
+        Shooting = true
+        task.spawn(function()
+            if Settings.TriggerbotDelay > 0 then task.wait(Settings.TriggerbotDelay) end
+            
+            if Settings.Triggerbot and GetTargetUnderCrosshair() == Target then
+                -- Silent Aim: Snap camera directly to target before shooting
+                if Settings.SilentAim then
+                    local char = Target.Character
+                    if char then
+                        local part = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+                        if part then Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position) end
+                    end
+                end
+
+                if mouse1press then
+                    mouse1press()
+                    task.wait(0.05)
+                    mouse1release()
+                elseif mouse1click then
+                    mouse1click()
+                end
+            end
+            
+            Shooting = false
+        end)
+    end
+end))
+
+-- New Features Handlers (Spinbot & Speed Hack)
+TrackConnection(RunService.RenderStepped:Connect(function()
+    -- Spinbot Engine
+    if Settings.Spinbot and LocalPlayer.Character then
+        local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(Settings.SpinSpeed), 0)
+        end
+    end
+
+    -- Speed Hack Engine
+    if Settings.SpeedHack and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = Settings.WalkSpeedValue
+        end
+    end
+end))
 
 -- Unified Heartbeat Loop for Hitboxes and Visuals
 TrackConnection(RunService.Heartbeat:Connect(function()
